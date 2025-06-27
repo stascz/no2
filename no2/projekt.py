@@ -25,7 +25,7 @@ def wczytaj_kolumny_z_pliku(nazwa_pliku):
 
     return kolumny
 
-# Przykład użycia
+
 nazwa_pliku = "dane.txt"
 kolumny = wczytaj_kolumny_z_pliku(nazwa_pliku)
 
@@ -49,6 +49,8 @@ Etot=np.array(kolumny[14])
 nat = np.arange(1, len(RealA22) + 1)
 
 
+c = 299792458
+G = int(6.6743E11)
 
 
 
@@ -79,12 +81,17 @@ print(bplus1)
 print(bcross1)
 
 
-I11 = RealA22/2 - RealA20/3
-I22 = RealA22/2 + RealA20/3
-I33 = 2*RealA20/3
-I13 = -RealA21
-I23 = ImA21
-I12 = -ImA22/2
+m1 = np.sqrt(32*np.pi/(15))*(G/(c**4))
+m2 = np.sqrt(16*np.pi/(5))*(G/(c**4))
+m3 = np.sqrt(4*np.pi/(5))*(G/(c**4))
+
+
+I11 = RealA22/(2*m3) - RealA20/(3*m1)
+I22 = -RealA22/(2*m3) - RealA20/(3*m1)
+I33 = 2*RealA20/(3*m1)
+I13 = -RealA21/m2
+I23 = ImA21/m2
+I12 = -ImA22/(2*m3)
 
 Qthetaphi = -I23
 Qphiphi = I22
@@ -93,7 +100,7 @@ Qthetatheta = I33
 hplus2 = Qthetatheta - Qphiphi
 hcross2 = 2*Qthetaphi
 
-hplus3 = RealA20 - RealA22
+hplus3 = RealA20/m1 + RealA22/(2*m3)
 hcross3 = 2*Qthetaphi
 
 aplus2, bplus2 = np.polyfit(hplus, hplus2, 1)
@@ -142,37 +149,37 @@ f2minus2, t2minus2, ftA2minus2 = stft(A2minus2, fs=5000, nperseg=75)
 
 plt.figure()
 plt.plot(czas, hplus, marker='.', linestyle='', color="b", markersize=2, label="hplus")
-plt.plot(czas, hplus1/aplus1, marker='.', linestyle='', color="r", markersize=2, label="hplus1/aplus1, aplus1=1.414213562532445")
+plt.plot(czas, hplus1/aplus1, marker='.', linestyle='', color="r", markersize=2, label=f"hplus1/aplus1, aplus1= {aplus1}" )
 plt.title("hplus z harmonijek ")
 plt.legend()
 
 plt.figure()
 plt.plot(czas, hcross, marker='.', linestyle='', color="b", markersize=2, label="hcross")
-plt.plot(czas, hcross1/across1, marker='.', linestyle='', color="r", markersize=2, label="hcross1/across1, across1=1.4142135626294037")
+plt.plot(czas, hcross1/across1, marker='.', linestyle='', color="r", markersize=2, label=f"hcross1/across1, across1={across1}")
 plt.title("hcross z harmonijek ")
 plt.legend()
 
 plt.figure()
 plt.plot(czas, hplus, marker='.', linestyle='', color="b", markersize=2, label="hplus")
-plt.plot(czas, hplus2/aplus2, marker='.', linestyle='', color="r", markersize=2, label="hplus2/aplus2, aplus2=0.7567292939023331")
+plt.plot(czas, hplus2/aplus2, marker='.', linestyle='', color="r", markersize=2, label=f"hplus2/aplus2, aplus2={aplus2}")
 plt.title("hplus z momentu kwadrupolowego z założeniem TT")
 plt.legend()
 
 plt.figure()
 plt.plot(czas, hcross, marker='.', linestyle='', color="b", markersize=2, label="hcross")
-plt.plot(czas, hcross2/across2, marker='.', linestyle='', color="r", markersize=2, label="hcross2/across2, across2=4.483992973931013")
+plt.plot(czas, hcross2/across2, marker='.', linestyle='', color="r", markersize=2, label=f"hcross2/across2, across2={across2}")
 plt.title("hcross z momentu kwadrupolowego z założeniem TT")
 plt.legend()
 
 plt.figure()
 plt.plot(czas, hplus, marker='.', linestyle='', color="b", markersize=2, label="hplus")
-plt.plot(czas, hplus3/aplus3, marker='.', linestyle='', color="r", markersize=2, label="hplus3/aplus3, aplus3=2.570420798434107")
+plt.plot(czas, hplus3/aplus3, marker='.', linestyle='', color="r", markersize=2, label=f"hplus3/aplus3, aplus3={aplus3}")
 plt.title("hplus z momentu kwadrupolowego bez założenia TT")
 plt.legend()
 
 plt.figure()
 plt.plot(czas, hcross, marker='.', linestyle='', color="b", markersize=2, label="hcross")
-plt.plot(czas, hcross3/across3, marker='.', linestyle='', color="r", markersize=2, label="hcross3/across3, across3=4.483992973931013")
+plt.plot(czas, hcross3/across3, marker='.', linestyle='', color="r", markersize=2, label=f"hcross3/across3, across3={across3}")
 plt.title("hcross z momentu kwadrupolowego bez założenia TT")
 plt.legend()
 
