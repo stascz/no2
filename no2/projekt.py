@@ -119,6 +119,8 @@ print(across3)
 print(bplus3)
 print(bcross3)
 
+
+
 # Funkcja do jednego uśrednienia
 def average_once(signal, window=3):
     kernel = np.ones(window) / window
