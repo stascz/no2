@@ -59,11 +59,11 @@ A20 = RealA20 + 1j*ImA20
 A2minus1 = RealA2minus1 + 1j*ImA2minus1
 A2minus2 = RealA2minus2 + 1j*ImA2minus2
 
-dA22_dt = np.gradient(A22, czas)
-dA21_dt = np.gradient(A21, czas)
-dA20_dt = np.gradient(A20, czas)
-dA2minus1_dt = np.gradient(A2minus1, czas)
-dA2minus2_dt = np.gradient(A2minus2, czas)
+dA22_dt = np.diff(A22, czas)
+dA21_dt = np.diff(A21, czas)
+dA20_dt = np.diff(A20, czas)
+dA2minus1_dt = np.diff(A2minus1, czas)
+dA2minus2_dt = np.diff(A2minus2, czas)
 
 #c**3/(32*np.pi*G)
 dE_dt = c**3/(32*np.pi*G)*(abs(dA22_dt)**2 + abs(dA21_dt)**2 + abs(dA20_dt)**2 + abs(dA2minus1_dt)**2 + abs(dA2minus2_dt)**2)
