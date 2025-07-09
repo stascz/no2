@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.fft import fft, fftfreq
+from scipy.integrate import simpson
 
 
 def NPtoquad(RealA22,ImA22,RealA21,ImA21,RealA20,ImA20,RealA2minus1,ImA2minus1,RealA2minus2,ImA2minus2):
@@ -35,7 +37,7 @@ def NPtoquad(RealA22,ImA22,RealA21,ImA21,RealA20,ImA20,RealA2minus1,ImA2minus1,R
 def quadtoNP(I11, I22, I33, I13, I23, I12 ):
 
     c = 299792458
-    G = int(6.6743E-11)
+    G = 6.6743E-11
 
     m1 = np.sqrt(32 * np.pi / (15)) * (G / (c ** 4))
     m2 = np.sqrt(16 * np.pi / (5)) * (G / (c ** 4))
@@ -89,6 +91,121 @@ def quadsolve (I11, I22, I33, I13, I23, I12, theta, phi):
     return hplus, hcross
 
 
+def dE_dtNP (RealA22, ImA22, RealA21, ImA21, RealA20, ImA20, RealA2minus1, ImA2minus1, RealA2minus2, ImA2minus2, czas):
+    c = 299792458
+    G = 6.67430e-11
+
+    A22 = RealA22 + 1j * ImA22
+    A21 = RealA21 + 1j * ImA21
+    A20 = RealA20 + 1j * ImA20
+    A2minus1 = RealA2minus1 + 1j * ImA2minus1
+    A2minus2 = RealA2minus2 + 1j * ImA2minus2
+
+    dA22_dt = np.gradient(A22, czas)
+    dA21_dt = np.gradient(A21, czas)
+    dA20_dt = np.gradient(A20, czas)
+    dA2minus1_dt = np.gradient(A2minus1, czas)
+    dA2minus2_dt = np.gradient(A2minus2, czas)
+
+    # c**3/(32*np.pi*G)
+    dE_dt = c ** 3 / (32 * np.pi * G) * (abs(dA22_dt) ** 2 + abs(dA21_dt) ** 2 + abs(dA20_dt) ** 2 + abs(dA2minus1_dt) ** 2 + abs(dA2minus2_dt) ** 2)
+
+    return dE_dt
+
+def EtotNP (RealA22, ImA22, RealA21, ImA21, RealA20, ImA20, RealA2minus1, ImA2minus1, RealA2minus2, ImA2minus2, czas):
+    c = 299792458
+    G = 6.67430e-11
+
+    A22 = RealA22 + 1j * ImA22
+    A21 = RealA21 + 1j * ImA21
+    A20 = RealA20 + 1j * ImA20
+    A2minus1 = RealA2minus1 + 1j * ImA2minus1
+    A2minus2 = RealA2minus2 + 1j * ImA2minus2
+
+    dA22_dt = np.gradient(A22, czas)
+    dA21_dt = np.gradient(A21, czas)
+    dA20_dt = np.gradient(A20, czas)
+    dA2minus1_dt = np.gradient(A2minus1, czas)
+    dA2minus2_dt = np.gradient(A2minus2, czas)
+
+    ft2A22_dt = fft(dA22_dt)
+    ft2A21_dt = fft(dA21_dt)
+    ft2A20_dt = fft(dA20_dt)
+    ft2A2minus1_dt = fft(dA2minus1_dt)
+    ft2A2minus2_dt = fft(dA2minus2_dt)
+
+    Fs = 5000
+
+    freqs = fftfreq(len(czas), 1/Fs)
+
+    inta22 = np.zeros_like(czas, dtype=float)
+    inta21 = np.zeros_like(czas, dtype=float)
+    inta20 = np.zeros_like(czas, dtype=float)
+    inta2minus1 = np.zeros_like(czas, dtype=float)
+    inta2minus2 = np.zeros_like(czas, dtype=float)
+
+    inta22[1] = abs(ft2A22_dt[1]) ** 2
+    inta21[1] = abs(ft2A21_dt[1]) ** 2
+    inta20[1] = abs(ft2A20_dt[1]) ** 2
+    inta2minus1[1] = abs(ft2A2minus1_dt[1]) ** 2
+    inta2minus2[1] = abs(ft2A2minus2_dt[1]) ** 2
+
+    for i in range(len(czas)):
+
+        if i < 2:
+            continue
+
+        inta22[i] = simpson(np.abs(ft2A22_dt[:i]) ** 2, 2*np.pi*freqs[:i])
+        inta21[i] = simpson(np.abs(ft2A21_dt[:i]) ** 2, 2*np.pi*freqs[:i])
+        inta20[i] = simpson(np.abs(ft2A20_dt[:i]) ** 2, 2*np.pi*freqs[:i])
+        inta2minus1[i] = simpson(np.abs(ft2A2minus1_dt[:i]) ** 2, 2*np.pi*freqs[:i])
+        inta2minus2[i] = simpson(np.abs(ft2A2minus2_dt[:i]) ** 2, 2*np.pi*freqs[:i])
+
+    # (c**3/(16*np.pi*G))
+
+    E_tot = (c ** 3 / (16 * np.pi * G)) * (inta22 + inta21 + inta20 + inta2minus1 + inta2minus2)
+    return E_tot
+
+
+def dE_dtquad (I11, I22, I33, I13, I23, I12, czas):
+    c = 299792458
+    G = 6.67430e-11
+
+    dI11_dt = np.gradient(I11, czas)
+    dI22_dt = np.gradient(I22, czas)
+    dI33_dt = np.gradient(I33, czas)
+    dI13_dt = np.gradient(I13, czas)
+    dI23_dt = np.gradient(I23, czas)
+    dI12_dt = np.gradient(I12, czas)
+
+    dE_dt = (G/(5*c**5))*(dI11_dt**2 +dI22_dt**2 + dI33_dt**2 + 2*(dI13_dt**2 +dI12_dt**2 +dI23_dt**2))
+    return dE_dt
+
+def Etotquad (I11, I22, I33, I13, I23, I12, czas):
+    c = 299792458
+    G = 6.67430e-11
+
+    dI11_dt = np.gradient(I11, czas)
+    dI22_dt = np.gradient(I22, czas)
+    dI33_dt = np.gradient(I33, czas)
+    dI13_dt = np.gradient(I13, czas)
+    dI23_dt = np.gradient(I23, czas)
+    dI12_dt = np.gradient(I12, czas)
+
+    dE_dt = (G/(5*c**5))*(dI11_dt**2 +dI22_dt**2 + dI33_dt**2 + 2*(dI13_dt**2 +dI12_dt**2 +dI23_dt**2))
+
+    Etot = np.zeros_like(czas, dtype=float)
+    Etot[1] = dE_dt[1]
+
+    for i in range(len(czas)):
+
+        if i < 2:
+            continue
+        Etot[i] = simpson(np.abs(dE_dt[:i]) , czas[:i])
+
+    return Etot
+
+
 
 def wczytaj_kolumny_z_pliku(nazwa_pliku):
     kolumny = []
@@ -111,6 +228,9 @@ def wczytaj_kolumny_z_pliku(nazwa_pliku):
                 kolumny[i].append(float(wartosc))  # konwertujemy do float
 
     return kolumny
+
+
+
 
 
 nazwa_pliku = "dane.txt"
@@ -144,6 +264,18 @@ across1, bcross1 = np.polyfit(hcross, hcross1, 1)
 aplus2, bplus2 = np.polyfit(hplus, hplus2, 1)
 across2, bcross2 = np.polyfit(hcross, hcross2, 1)
 
+dE_dtNP = dE_dtNP (RealA22, ImA22, RealA21, ImA21, RealA20, ImA20, RealA2minus1, ImA2minus1, RealA2minus2, ImA2minus2, czas)
+EtotNP = EtotNP (RealA22, ImA22, RealA21, ImA21, RealA20, ImA20, RealA2minus1, ImA2minus1, RealA2minus2, ImA2minus2, czas)
+
+dE_dtquad = dE_dtquad (I11, I22, I33, I13, I23, I12, czas)
+Etotquad = Etotquad (I11, I22, I33, I13, I23, I12, czas)
+
+aNP1, bNP1 = np.polyfit(dEdt, dE_dtNP , 1)
+aNP2, bNP2 = np.polyfit(Etot, EtotNP , 1)
+
+aquad1, bquad1 = np.polyfit(dEdt, dE_dtquad , 1)
+aquad2, bquad2 = np.polyfit(Etot, Etotquad , 1)
+
 plt.figure()
 plt.plot(czas, hplus, marker='.', linestyle='', color="b", markersize=2, label="hplus")
 plt.plot(czas, hplus1/aplus1, marker='.', linestyle='', color="r", markersize=2, label=f"hplus1/aplus1, aplus1= {aplus1}" )
@@ -167,6 +299,39 @@ plt.plot(czas, hcross, marker='.', linestyle='', color="b", markersize=2, label=
 plt.plot(czas, hcross2/across2, marker='.', linestyle='', color="r", markersize=2, label=f"hcross2/across2, across2={across2}")
 plt.title("hcross z momentu kwadrupolowego z założeniem TT")
 plt.legend()
+
+plt.figure()
+plt.plot(czas, dEdt, marker='.', linestyle='', color="b", markersize=2, label="dane")
+plt.plot(czas, dE_dtNP/aNP1, marker='.', linestyle='', color="r", markersize=2, label=f"dE_dtNP/aNP1, aNP1={aNP1} ")
+plt.yscale("log")
+plt.xlabel("czas po odbiciu (ms)")
+plt.ylabel("jasność fali graw. (10^42 erg/s)")
+plt.legend()
+
+plt.figure()
+plt.plot(czas,Etot , marker='.', linestyle='', color="b", markersize=2, label="dane")
+plt.plot(czas,EtotNP/aNP2 , marker='.', linestyle='', color="r", markersize=2, label=f"EtotNP/aNP2, aNP2={aNP2}")
+plt.yscale("log")
+plt.xlabel("czas po odbiciu (ms)")
+plt.ylabel("energia fali graw. (10^45 erg)")
+plt.legend()
+
+plt.figure()
+plt.plot(czas, dEdt, marker='.', linestyle='', color="b", markersize=2, label="dane")
+plt.plot(czas, dE_dtquad/aquad1, marker='.', linestyle='', color="r", markersize=2, label=f"dE_dtquad/aquad1, aquad1={aquad1}")
+plt.yscale("log")
+plt.xlabel("czas po odbiciu (ms)")
+plt.ylabel("jasność fali graw. (10^42 erg/s)")
+plt.legend()
+
+plt.figure()
+plt.plot(czas,Etot , marker='.', linestyle='', color="b", markersize=2, label="dane")
+plt.plot(czas,Etotquad/aquad2 , marker='.', linestyle='', color="r", markersize=2, label=f"Etotquad/aquad2, aquad2={aquad2}")
+plt.yscale("log")
+plt.xlabel("czas po odbiciu (ms)")
+plt.ylabel("energia fali graw. (10^45 erg)")
+plt.legend()
+
 
 plt.show()
 
